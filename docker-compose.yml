@@ -1,0 +1,61 @@
+version: "3.8"
+services:
+  ##########################
+  # CONTENEURS APPLICATIFS #
+  ##########################
+
+  #app
+  app:
+    container_name: ${CONTAINER_PREFIX}-app
+    build: ./docker/php
+    ports:
+      - "8000:80"
+    volumes:
+      - ./docker/php/vhosts:/etc/apache2/sites-enabled
+      - ./app:/var/www
+      - ./var/logs:/var/log/apache2
+    restart: always
+    networks:
+      - dev
+
+
+  ##########################
+  # CONTENEURS SERVICES    #
+  ##########################
+
+  #Base de données Mysql
+  db:
+    container_name: ${CONTAINER_PREFIX}-db
+    image: mysql:5.7
+    platform: linux/amd64
+    restart: always
+    volumes:
+      - ./var/db-data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      #MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: lafleur
+      #MYSQL_USER: app_db_user
+      #MYSQL_PASSWORD: app_db_password
+    networks:
+      - dev
+  #PHP My Admin
+  phpmyadmin:
+    container_name: ${CONTAINER_PREFIX}-pma
+    image: phpmyadmin:latest
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+    networks:
+      - dev
+#Network
+networks:
+  dev:
+#Volumes
+volumes:
+  db-data:
